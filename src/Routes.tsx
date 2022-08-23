@@ -5,7 +5,7 @@ import ValidationPage from './pages/ValidationPage';
 
 const AppRoutes = () => {
     return (        
-        <Router>
+        <Router basename="devplayground">
             <Routes>
                 <Route path="/validate-avro-schema" element={<ValidationPage />}></Route>
                 <Route path="/" element={<IndexPage />}></Route>

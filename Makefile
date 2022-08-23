@@ -1,6 +1,5 @@
 build: clean
-	npm run build
-	cp -R dist/ website/
+	npm run build 
 
 clean:
 	rm -rf dist/

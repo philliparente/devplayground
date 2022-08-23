@@ -1,6 +1,11 @@
 import React, { ReactNode } from 'react';
-import { Type as AvroType } from 'avsc';
+// @ts-ignore
+import * as avro from 'avro-js';
+
 import { JSONEditor } from '../components/JSONEditor';
+
+// @ts-ignore
+import * as avroConvert from'json-to-avro';
 
 interface ValidationPageProps {}
 interface ValidationPageState {
@@ -10,7 +15,7 @@ interface ValidationPageState {
   schemaDefinitionErrors: string[];
   schemaValueErrors: string[];
 
-  parsedSchemaDefinition: AvroType
+  parsedSchemaDefinition:  avro.Type
 }
 
 const DEFAULT_SCHEMA_DEFINITION: Record<string, any> = {
@@ -86,15 +91,13 @@ export default class ValidationPage extends React.Component<ValidationPageProps,
       schemaDefinitionErrors: [],
       schemaValue: DEFAULT_FORMAT(DEFAULT_SCHEMA_VALUE),
       schemaValueErrors: [],
-      parsedSchemaDefinition: AvroType.forSchema(DEFAULT_SCHEMA_DEFINITION as AvroType),
+      parsedSchemaDefinition: avro.parse(DEFAULT_SCHEMA_DEFINITION as avro.Type),
     }
-  
-    
   }
 
   listenToChange(value: string): void {
     const jsonValue  = JSON.parse(value);
-    const schema = AvroType.forSchema(jsonValue);
+    const schema = avro.parse(jsonValue);
     
     console.log(jsonValue);
     console.log(schema);
@@ -105,7 +108,7 @@ export default class ValidationPage extends React.Component<ValidationPageProps,
     let parsedValue = {};
     const definitionErrors = [];
     let isJSONValid = true;
-    let schema: null | AvroType = null;
+    let schema: null | avro.Type = null;
     try{
       parsedValue = JSON.parse(value || '{}')
     } catch(e){
@@ -115,7 +118,7 @@ export default class ValidationPage extends React.Component<ValidationPageProps,
     }
      if(isJSONValid){
       try{
-        schema = AvroType.forSchema(parsedValue as AvroType);
+        schema = avro.parse(value as avro.Type);
       }catch(e){
         definitionErrors.push(String(e));
       }
@@ -125,7 +128,7 @@ export default class ValidationPage extends React.Component<ValidationPageProps,
      this.setState({
       schemaDefinition: value, 
       schemaDefinitionErrors: definitionErrors, 
-      parsedSchemaDefinition: schema as AvroType
+      parsedSchemaDefinition: schema as avro.Type
     }, () => {
       this.schemaValueChangeHandler(this.state.schemaValue);
     });
@@ -144,11 +147,18 @@ export default class ValidationPage extends React.Component<ValidationPageProps,
         valueErrors.push('JSON is not valid');
         parsedValue = {};
     }
-
+    
     if(isJSONValid && this.state.parsedSchemaDefinition){
-      this.state.parsedSchemaDefinition.isValid(parsedValue, {
-        noUndeclaredFields: true,
-        errorHook: (path: string[], val, type) => {
+      let valueToValidate = {};
+      try{
+        valueToValidate = avroConvert.jsonToAvro(JSON.parse(this.state.schemaDefinition), parsedValue);
+      }catch(e){
+        console.log(e);
+        valueToValidate = parsedValue;
+      }
+      
+      this.state.parsedSchemaDefinition.isValid(valueToValidate, {
+        errorHook: (path: string[], val: any, type: any) => {
             if(path.length === 0){
               valueErrors.push(`Unexpected field for ${type}`);
               return;
@@ -170,7 +180,7 @@ export default class ValidationPage extends React.Component<ValidationPageProps,
         <hr className="teal-text text-darken-3" />
         <p>
           An <a href="https://avro.apache.org/docs/1.10.2/spec.html">Avro schema</a> and value validation powered by
-          <a href="https://github.com/mtth/avsc"> mtth/avsc lib</a>. 
+          <a href="https://github.com/apache/avro/tree/master/lang/js"> avro-js lib</a> and . 
           Sometimes, is tedious to validate Avro schemas and values from it without setup an environment fot it. This section aims to provide a flexible way to fast validate Avro schemas and values easily.
         </p>
         </div>
