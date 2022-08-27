@@ -156,6 +156,13 @@ export default class ValidationPage extends React.Component<ValidationPageProps,
     this.setState({schemaValue: DEFAULT_FORMAT(randomValue)})
   }
 
+  onInferHandler(): void {
+    const schema = DEFAULT_FORMAT(AvroType.forValue(JSON.parse(this.state.schemaValue)))
+    this.setState({schemaDefinition: schema}, () => {
+      this.schemaDefinitionChangeHandler(schema);
+    });
+  }
+
   render()  : ReactNode {
     const {schemaDefinition, schemaValue} = this.state;
     return (
@@ -177,6 +184,9 @@ export default class ValidationPage extends React.Component<ValidationPageProps,
               }
               
             </h5>
+            <a className="waves-effect waves-light btn-small" onClick={() => this.onInferHandler()}>
+              <i className="material-icons right">flash_on</i>Infer from value
+            </a>
             <hr className="teal-text text-darken-3" />
             <JSONEditor 
               errors={this.state.schemaDefinitionErrors}
@@ -187,8 +197,7 @@ export default class ValidationPage extends React.Component<ValidationPageProps,
           </div>
           <div className="col s12 l2">
           <div className="center-align">
-            
-            <i className="material-icons large teal-text text-darken-3">arrow_forward</i>
+            <i className="material-icons large teal-text text-darken-3">compare_arrows</i>
           </div>
           </div>
           <div className="col s12 l5 z-depth-1">
