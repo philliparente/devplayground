@@ -29,7 +29,7 @@ export class JSONEditor extends React.Component<JSONEditorProps> {
             <div>
                 <CodeMirror
                     value={this.props.value}
-                    height={`${lines * 23}px`}
+                    height={`${lines * 22}px`}
                     extensions={[json()]}
                     onChange={(value) => this.onValueChange(value)} 
                 />

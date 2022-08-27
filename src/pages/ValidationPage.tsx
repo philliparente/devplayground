@@ -1,11 +1,7 @@
 import React, { ReactNode } from 'react';
-// @ts-ignore
-import * as avro from 'avro-js';
-
 import { JSONEditor } from '../components/JSONEditor';
 
-// @ts-ignore
-import * as avroConvert from'json-to-avro';
+import { Type as AvroType } from 'avsc'
 
 interface ValidationPageProps {}
 interface ValidationPageState {
@@ -15,7 +11,7 @@ interface ValidationPageState {
   schemaDefinitionErrors: string[];
   schemaValueErrors: string[];
 
-  parsedSchemaDefinition:  avro.Type
+  parsedSchemaDefinition:  AvroType
 }
 
 const DEFAULT_SCHEMA_DEFINITION: Record<string, any> = {
@@ -91,24 +87,15 @@ export default class ValidationPage extends React.Component<ValidationPageProps,
       schemaDefinitionErrors: [],
       schemaValue: DEFAULT_FORMAT(DEFAULT_SCHEMA_VALUE),
       schemaValueErrors: [],
-      parsedSchemaDefinition: avro.parse(DEFAULT_SCHEMA_DEFINITION as avro.Type),
+      parsedSchemaDefinition:  AvroType.forSchema(DEFAULT_SCHEMA_DEFINITION as AvroType),
     }
   }
-
-  listenToChange(value: string): void {
-    const jsonValue  = JSON.parse(value);
-    const schema = avro.parse(jsonValue);
-    
-    console.log(jsonValue);
-    console.log(schema);
-  }
-
 
   schemaDefinitionChangeHandler(value: string) {
     let parsedValue = {};
     const definitionErrors = [];
     let isJSONValid = true;
-    let schema: null | avro.Type = null;
+    let schema: null | AvroType = null;
     try{
       parsedValue = JSON.parse(value || '{}')
     } catch(e){
@@ -118,7 +105,7 @@ export default class ValidationPage extends React.Component<ValidationPageProps,
     }
      if(isJSONValid){
       try{
-        schema = avro.parse(value as avro.Type);
+        schema = AvroType.forSchema(parsedValue as AvroType);
       }catch(e){
         definitionErrors.push(String(e));
       }
@@ -128,7 +115,7 @@ export default class ValidationPage extends React.Component<ValidationPageProps,
      this.setState({
       schemaDefinition: value, 
       schemaDefinitionErrors: definitionErrors, 
-      parsedSchemaDefinition: schema as avro.Type
+      parsedSchemaDefinition: schema as AvroType
     }, () => {
       this.schemaValueChangeHandler(this.state.schemaValue);
     });
@@ -149,15 +136,8 @@ export default class ValidationPage extends React.Component<ValidationPageProps,
     }
     
     if(isJSONValid && this.state.parsedSchemaDefinition){
-      let valueToValidate = {};
-      try{
-        valueToValidate = avroConvert.jsonToAvro(JSON.parse(this.state.schemaDefinition), parsedValue);
-      }catch(e){
-        console.log(e);
-        valueToValidate = parsedValue;
-      }
       
-      this.state.parsedSchemaDefinition.isValid(valueToValidate, {
+      this.state.parsedSchemaDefinition.isValid(parsedValue, {
         errorHook: (path: string[], val: any, type: any) => {
             if(path.length === 0){
               valueErrors.push(`Unexpected field for ${type}`);
@@ -171,6 +151,11 @@ export default class ValidationPage extends React.Component<ValidationPageProps,
     this.setState({schemaValue: value, schemaValueErrors: valueErrors})
   }
 
+  onRandomHandler(): void {
+    const randomValue = this.state.parsedSchemaDefinition.random();
+    this.setState({schemaValue: DEFAULT_FORMAT(randomValue)})
+  }
+
   render()  : ReactNode {
     const {schemaDefinition, schemaValue} = this.state;
     return (
@@ -180,7 +165,7 @@ export default class ValidationPage extends React.Component<ValidationPageProps,
         <hr className="teal-text text-darken-3" />
         <p>
           An <a href="https://avro.apache.org/docs/1.10.2/spec.html">Avro schema</a> and value validation powered by
-          <a href="https://github.com/apache/avro/tree/master/lang/js"> avro-js lib</a> and . 
+          <a href="https://github.com/mtth/avsc"> mtth/avsc lib</a>. 
           Sometimes, is tedious to validate Avro schemas and values from it without setup an environment fot it. This section aims to provide a flexible way to fast validate Avro schemas and values easily.
         </p>
         </div>
@@ -213,6 +198,9 @@ export default class ValidationPage extends React.Component<ValidationPageProps,
               }
 
           </h5>
+          <a className="waves-effect waves-light btn-small" onClick={() => this.onRandomHandler()}>
+            <i className="material-icons right">shuffle</i>Generate value
+          </a>
           <hr className="teal-text text-darken-3" />
             <JSONEditor 
               value={schemaValue} 
@@ -222,8 +210,6 @@ export default class ValidationPage extends React.Component<ValidationPageProps,
           </div>
         </div>
       </div>
-      
-    
     )
   }
 }
