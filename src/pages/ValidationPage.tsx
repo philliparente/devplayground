@@ -89,6 +89,7 @@ export default class ValidationPage extends React.Component<ValidationPageProps,
       schemaValueErrors: [],
       parsedSchemaDefinition:  AvroType.forSchema(DEFAULT_SCHEMA_DEFINITION as AvroType),
     }
+    document.title = "Avro Validator Online"
   }
 
   schemaDefinitionChangeHandler(value: string) {
@@ -162,6 +163,7 @@ export default class ValidationPage extends React.Component<ValidationPageProps,
       this.schemaDefinitionChangeHandler(schema);
     });
   }
+  
 
   render()  : ReactNode {
     const {schemaDefinition, schemaValue} = this.state;
